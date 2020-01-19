@@ -4,7 +4,7 @@
 import os
 import sys
 import tarfile
-import time
+import time, timeit
 import pyprind
 import pandas as pd
 import numpy as np
@@ -654,6 +654,8 @@ clf = clf.partial_fit(X_test, y_test)
 # # as the dataset includes test data
 print('Accuracy: %.3f' % clf.score(X_test, y_test))
 
+# #---------------------------------------------------------------------------
+
 # ## Topic modeling
 
 # ### Decomposing text documents with Latent Dirichlet Allocation
@@ -661,13 +663,13 @@ print('Accuracy: %.3f' % clf.score(X_test, y_test))
 # ### Latent Dirichlet Allocation with scikit-learn
 
 
-
+# import data into a pandas dataframe
 
 df = pd.read_csv('movie_data.csv', encoding='utf-8')
 df.head(3)
 
 
-
+##-----------------IGNORE BEGIN------------------------------------
 
 ## @Readers: PLEASE IGNORE THIS CELL
 ##
@@ -677,36 +679,45 @@ df.head(3)
 ## to prevent timeout errors and just serves a debugging tool
 ## for this notebook
 
-if 'TRAVIS' in os.environ:
+""" if 'TRAVIS' in os.environ:
     df.loc[:500].to_csv('movie_data.csv')
     df = pd.read_csv('movie_data.csv', nrows=500)
     print('SMALL DATA SUBSET CREATED FOR TESTING')
+"""
+
+##-----------------IGNORE END------------------------------------
 
 
-
-
-
+# use the count vectorizer to create the B-O-W matrix
 count = CountVectorizer(stop_words='english',
                         max_df=.1,
                         max_features=5000)
 X = count.fit_transform(df['review'].values)
 
+# now fit the LDA classfier using the BOW matrix for 10 topics
 
-
-
-
-lda = LatentDirichletAllocation(n_topics=10,
+def s():
+    lda = LatentDirichletAllocation(n_components=10,
                                 random_state=123,
                                 learning_method='batch')
-X_topics = lda.fit_transform(X)
+    X_topics = lda.fit_transform(X)
+    return lda, X_topics
 
+# time the function to get an idea - it takes about 5 minutes
 
+"""
+elapsetime = timeit.timeit("s()", number=1, setup="from __main__ import s")
 
-
+print("elapsed time: %4.2f minutes" %(elapsetime/60.0))
+"""
+start = time.time()
+lda, X_topics = s()
+end = time.time()
+print('elapsed time = %5.2f minutes' %((end-start)/60))
 lda.components_.shape
 
 
-
+# let's display the top 5 topics
 
 n_top_words = 5
 feature_names = count.get_feature_names()
@@ -732,8 +743,6 @@ for topic_idx, topic in enumerate(lda.components_):
 # 10. Action movies
 
 # To confirm that the categories make sense based on the reviews, let's plot 5 movies from the horror movie category (category 6 at index position 5):
-
-
 
 horror = X_topics[:, 5].argsort()[::-1]
 
