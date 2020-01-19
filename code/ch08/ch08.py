@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
-import re
+import re, string
 from nltk.stem.porter import PorterStemmer
 import nltk
 from nltk.corpus import stopwords
@@ -25,7 +25,9 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.decomposition import LatentDirichletAllocation
 from distutils.version import LooseVersion as Version
 from sklearn import __version__ as sklearn_version
-
+from xml.sax.saxutils import escape as xesc
+from html.parser import HTMLParser
+from numba import jit, cuda
 
 # Added version check for recent scikit-learn 0.18 checks
 
@@ -299,26 +301,39 @@ l2_tfidf
 
 
 
-# ## Cleaning text data
+# ## Cleaning text data -  html tags, punctuations etc
 
 
 
 df.loc[0, 'review'][-50:]
 
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.strict = False
+        self.convert_charrefs= True
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
 
 def preprocessor(text):
-    text = re.sub('<[^>]*>', '', text)
+    strip = MLStripper()
+    #text = re.sub('<[^>]*>', '', text)
+    strip.feed(text)
+    text = strip.get_data()
     emoticons = re.findall('(?::|;|=)(?:-)?(?:\)|\(|D|P)',
                            text)
-    text = (re.sub('[\W]+', ' ', text.lower()) +
-            ' '.join(emoticons).replace('-', ''))
+    text = (re.sub('[\W]+', ' ', text.lower()) + ' '.join(emoticons).replace('-', ''))
+    
     return text
 
 
 # test the pre-processor on head data
 
 preprocessor(df.loc[0, 'review'][-50:])
-
 
 preprocessor("</a>This :) is :( a test :-)!")
 
@@ -332,42 +347,48 @@ df['review'] = df['review'].apply(preprocessor)
 # ## Processing documents into tokens
 
 
-
-
 porter = PorterStemmer()
 
 def tokenizer(text):
-    return text.split()
+    text = preprocessor(text)
+    return [w for w in text.split()]
 
 
 def tokenizer_porter(text):
     return [porter.stem(word) for word in text.split()]
 
+def mytokenizer(text):
+    text = preprocessor(text)
+    stop = stopwords.words('english')
+    tokenized = [w for w in text.split() if w not in stop]
+    return tokenized
+
+
+def mytokenizer_porter(text):
+    return [porter.stem(word) for word in text.split()]
+
+
+tokstr = 'runners like running and thus they run wildly as much as smartly and strongly'
+
+
+mytokenizer(tokstr)
+
+mytokenizer_porter(tokstr)
 
 
 
-tokenizer('runners like running and thus they run')
-
-
-
-
-tokenizer_porter('runners like running and thus they run')
-
-
-
-
+# download stopwords pakcage from nltk library so we can remove them from our text
+# installation location is : C:\Users\sbadr\Anaconda3\envs\python-ML-book-workout\lib\nltk_data..
 
 nltk.download('stopwords')
 
-
-
-
-
 stop = stopwords.words('english')
-[w for w in tokenizer_porter('a runner likes running and runs a lot')[-10:]
-if w not in stop]
+print(stop)
+
+[w for w in mytokenizer_porter(tokstr)[-10:] if w not in stop]
 
 
+# _____________________________________________________________________
 
 # # Training a logistic regression model for document classification
 
@@ -379,8 +400,6 @@ X_train = df.loc[:25000, 'review'].values
 y_train = df.loc[:25000, 'sentiment'].values
 X_test = df.loc[25000:, 'review'].values
 y_test = df.loc[25000:, 'sentiment'].values
-
-
 
 
 
@@ -405,11 +424,19 @@ param_grid = [{'vect__ngram_range': [(1, 1)],
 lr_tfidf = Pipeline([('vect', tfidf),
                      ('clf', LogisticRegression(random_state=0))])
 
-gs_lr_tfidf = GridSearchCV(lr_tfidf, param_grid,
+def GridSearchCVCPU(numjobs=-1): 
+    return GridSearchCV(lr_tfidf, param_grid,
                            scoring='accuracy',
                            cv=5,
                            verbose=1,
-                           n_jobs=-1)
+                           n_jobs=numjobs)
+
+@cuda.jit
+def GridSearchCVGPU(tfidf_gpu, X_tr, y_tr): 
+    
+    tfidf_gpu.fit(X_tr, y_tr)
+    
+    return tfidf_gpu
 
 
 # **Important Note about `n_jobs`**
@@ -435,7 +462,7 @@ gs_lr_tfidf = GridSearchCV(lr_tfidf, param_grid,
 #                   ]
 
 
-
+## --------------------IGNORE START--------------------------
 ## @Readers: PLEASE IGNORE THIS CELL
 ##
 ## This cell is meant to generate more 
@@ -445,38 +472,61 @@ gs_lr_tfidf = GridSearchCV(lr_tfidf, param_grid,
 ## speeding up the run using a smaller
 ## dataset for debugging
 
-if 'TRAVIS' in os.environ:
-    gs_lr_tfidf.verbose=2
-    X_train = df.loc[:250, 'review'].values
-    y_train = df.loc[:250, 'sentiment'].values
-    X_test = df.loc[25000:25250, 'review'].values
-    y_test = df.loc[25000:25250, 'sentiment'].values
+## if 'TRAVIS' in os.environ:
+##    gs_lr_tfidf.verbose=2
+##    X_train = df.loc[:250, 'review'].values
+##    y_train = df.loc[:250, 'sentiment'].values
+##    X_test = df.loc[25000:25250, 'review'].values
+##    y_test = df.loc[25000:25250, 'sentiment'].values
 
 
+## ---------------------IGNORE END----------------------------
+
+## CPU run - njobs = -1 for the maximum i.e. 12 concurrent worker threads
+
+gs_lr_tfidf_cpu = GridSearchCVCPU(-1)
+t1_start = time.process_time()
+gs_lr_tfidf_cpu.fit(X_train, y_train)
+t1_stop = time.process_time()
+protime = t1_stop - t1_start
+print('elapsed process time: %f' %protime)
+
+print('Best parameter set: %s ' % gs_lr_tfidf_cpu.best_params_)
+print('CV Accuracy: %.3f' % gs_lr_tfidf_cpu.best_score_)
+
+# applyingthe best estimator config on test data
+clf_cpu = gs_lr_tfidf_cpu.best_estimator_
+print('Test Accuracy: %.3f' % clf_cpu.score(X_test, y_test))
 
 
-gs_lr_tfidf.fit(X_train, y_train)
+## GPU run using numba libraries [work in progress]
 
+gs_lr_tfidf_gpu = GridSearchCV(lr_tfidf, param_grid,
+                           scoring='accuracy',
+                           cv=5,
+                           verbose=1,
+                           n_jobs=-1)
 
+threadsperblock = 32
+array_size = X_train.shape()[0] * X_train.shape()[1]
+blockspergrid = (array_size + (threadsperblock - 1)) // threadsperblock
 
+gs_lr_tfidf_gpu = GridSearchCVGPU[blockspergrid, 
+                                  threadsperblock](gs_lr_tfidf_gpu, 
+                                                   X_train, 
+                                                   y_train)
+                                                   
+print('Best parameter set: %s ' % gs_lr_tfidf_gpu.best_params_)
+print('CV Accuracy: %.3f' % gs_lr_tfidf_gpu.best_score_)
 
-print('Best parameter set: %s ' % gs_lr_tfidf.best_params_)
-print('CV Accuracy: %.3f' % gs_lr_tfidf.best_score_)
-
-
-
-
-clf = gs_lr_tfidf.best_estimator_
-print('Test Accuracy: %.3f' % clf.score(X_test, y_test))
-
-
+clf_gpu = gs_lr_tfidf_gpu.best_estimator_
+print('Test Accuracy: %.3f' % clf_gpu.score(X_test, y_test))
 
 # ####  Start comment:
 #     
-# Please note that `gs_lr_tfidf.best_score_` is the average k-fold cross-validation score. I.e., if we have a `GridSearchCV` object with 5-fold cross-validation (like the one above), the `best_score_` attribute returns the average score over the 5-folds of the best model. To illustrate this with an example:
-
-
-
+# Please note that `gs_lr_tfidf.best_score_` is the average k-fold cross-validation score. 
+# I.e., if we have a `GridSearchCV` object with 5-fold cross-validation (like the one above), the `best_score_` attribute returns the average score over the 5-folds of the best model. 
+# To illustrate this with an example:
 
 
 np.random.seed(0)
@@ -489,12 +539,9 @@ cv5_idx = list(StratifiedKFold(n_splits=5, shuffle=False, random_state=0).split(
 cross_val_score(LogisticRegression(random_state=123), X, y, cv=cv5_idx)
 
 
-# By executing the code above, we created a simple data set of random integers that shall represent our class labels. Next, we fed the indices of 5 cross-validation folds (`cv3_idx`) to the `cross_val_score` scorer, which returned 5 accuracy scores -- these are the 5 accuracy values for the 5 test folds.  
-# 
-# Next, let us use the `GridSearchCV` object and feed it the same 5 cross-validation sets (via the pre-generated `cv3_idx` indices):
-
-
-
+# By executing the code above, we created a simple data set of random integers that shall represent our class labels. 
+# Next, we fed the indices of 5 cross-validation folds (`cv5_idx`) to the `cross_val_score` scorer, which returned 5 accuracy scores -- these are the 5 accuracy values for the 5 test folds.  
+# Next, let us use the `GridSearchCV` object and feed it the same 5 cross-validation sets (via the pre-generated `cv5_idx` indices):
 
 gs = GridSearchCV(LogisticRegression(), {}, cv=cv5_idx, verbose=3).fit(X, y) 
 
@@ -503,14 +550,12 @@ gs = GridSearchCV(LogisticRegression(), {}, cv=cv5_idx, verbose=3).fit(X, y)
 
 # Now, the best_score_ attribute of the `GridSearchCV` object, which becomes available after `fit`ting, returns the average accuracy score of the best model:
 
-
+gs.best_estimator_
 
 gs.best_score_
 
 
 # As we can see, the result above is consistent with the average score computed the `cross_val_score`.
-
-
 
 cross_val_score(LogisticRegression(), X, y, cv=cv5_idx).mean()
 
@@ -519,18 +564,19 @@ cross_val_score(LogisticRegression(), X, y, cv=cv5_idx).mean()
 # 
 
 
-# # Working with bigger data - online algorithms and out-of-core learning
+# # Working with bigger data sets 
+# # - online algorithms and out-of-core learning
 
 
 
-
-def tokenizer(text):
+# # first, let's tokenize - use my tokenizer function 
+""" def tokenizer(text):
     text = re.sub('<[^>]*>', '', text)
     emoticons = re.findall('(?::|;|=)(?:-)?(?:\)|\(|D|P)', text.lower())
     text = re.sub('[\W]+', ' ', text.lower()) +        ' '.join(emoticons).replace('-', '')
     tokenized = [w for w in text.split() if w not in stop]
     return tokenized
-
+"""
 
 def stream_docs(path):
     with open(path, 'r', encoding='utf-8') as csv:
@@ -538,8 +584,6 @@ def stream_docs(path):
         for line in csv:
             text, label = line[:-3], int(line[-2])
             yield text, label
-
-
 
 
 next(stream_docs(path='movie_data.csv'))
@@ -560,12 +604,13 @@ def get_minibatch(doc_stream, size):
 
 
 
-
+# # Both countVectorizer and TfidVectorizer require complete voocabulary in memory
+# # So, we use data-independent HashingVectorizer and uses 32-bit MurmurHash3
 
 vect = HashingVectorizer(decode_error='ignore', 
                          n_features=2**21,
                          preprocessor=None, 
-                         tokenizer=tokenizer)
+                         tokenizer=mytokenizer)
 
 if Version(sklearn_version) < '0.18':
     clf = SGDClassifier(loss='log', random_state=1, n_iter=1)
@@ -595,16 +640,19 @@ for _ in range(45):
 
 
 
-
+# we will use the last 5000 documents as test data
 X_test, y_test = get_minibatch(doc_stream, size=5000)
 X_test = vect.transform(X_test)
 print('Accuracy: %.3f' % clf.score(X_test, y_test))
 
 
-
+# # we can update our model with the last 5000 docs
 
 clf = clf.partial_fit(X_test, y_test)
 
+# running again gives us higher acuracy but this might have overfit the data
+# # as the dataset includes test data
+print('Accuracy: %.3f' % clf.score(X_test, y_test))
 
 # ## Topic modeling
 
