@@ -2,20 +2,23 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="cdfd2b71-2d5a-4082-bfb2-30d71cc396c1" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/PythonMachineLearningSecondEdition_Code.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/rSettings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Chapter01/.ipynb_checkpoints/ch01-checkpoint.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chapter01/ch01.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Chapter01/ch01.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch08/ch08.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ch08/ch08.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch09/1st_flask_app_1/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ch09/1st_flask_app_1/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch09/movieclassifier/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ch09/movieclassifier/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch09/movieclassifier/pkl_objects/classifier.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/code/ch09/movieclassifier/pkl_objects/classifier.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch09/movieclassifier/reviews.sqlite" beforeDir="false" afterPath="$PROJECT_DIR$/code/ch09/movieclassifier/reviews.sqlite" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch09/movieclassifier/vectorizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ch09/movieclassifier/vectorizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch09/pickle-test-scripts/pickle-dump-test.py" beforeDir="false" afterPath="$PROJECT_DIR$/code/ch09/pickle-test-scripts/pickle-dump-test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/code/ch09/pickle-test-scripts/vectorizer.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -26,6 +29,9 @@
         <option value="C:\Users\sbadr\PythonMachineLearning\PML_Packtbook_Code\PythonMachineLearningSecondEdition_Code\.idea" />
       </set>
     </option>
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="1" />
   </component>
   <component name="ProjectId" id="1VrrrXLcXYWqQhHJIOzyR0xVG6I" />
   <component name="ProjectLevelVcsManager">
@@ -39,6 +45,7 @@
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="ServiceViewManager">
     <option name="viewStates">
@@ -67,5 +74,11 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="277" y="56" key="SettingsEditor" timestamp="1579607892050">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="277" y="56" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1579607892050" />
   </component>
 </project>

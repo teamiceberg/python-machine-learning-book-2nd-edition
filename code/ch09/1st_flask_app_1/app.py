@@ -1,3 +1,5 @@
+# # sample app - for learning purposes - intro to Flask framework
+
 from flask import Flask, render_template
 
 app = Flask(__name__)

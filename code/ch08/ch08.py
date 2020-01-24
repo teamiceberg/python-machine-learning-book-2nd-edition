@@ -47,7 +47,6 @@ from numba import jit, cuda
 
 
 
-
 # *The use of `watermark` is optional. You can install this IPython extension via "`pip install watermark`". For more information, please see: https://github.com/rasbt/watermark.*
 
 
@@ -83,7 +82,6 @@ from numba import jit, cuda
 # B) If you are working with Windows, download an archiver such as [7Zip](http://www.7-zip.org) to extract the files from the download archive.
 
 # **Optional code to download and unzip the dataset via Python:**
-
 
 
 
@@ -130,8 +128,6 @@ if not os.path.isdir('aclImdb'):
 # ## Preprocessing the movie dataset into more convenient format
 
 
-
-
 # change the `basepath` to the directory of the
 # unzipped movie dataset
 
@@ -155,10 +151,8 @@ df.columns = ['review', 'sentiment']
 
 # Shuffling the DataFrame:
 
-
 np.random.seed(0)
 df = df.reindex(np.random.permutation(df.index))
-
 
 # Optional: Saving the assembled data as CSV file:
 
@@ -167,6 +161,7 @@ df.to_csv('movie_data.csv', index=False, encoding='utf-8')
 # read back the shuffled data into a panda DF
 
 df = pd.read_csv('movie_data.csv', encoding='utf-8')
+
 df.head(3)
 
 
@@ -564,12 +559,12 @@ cross_val_score(LogisticRegression(), X, y, cv=cv5_idx).mean()
 # 
 
 
-# # Working with bigger data sets 
+# # -----------------Working with bigger data sets------------------ 
 # # - online algorithms and out-of-core learning
 
 
 
-# # first, let's tokenize - use my tokenizer function 
+
 """ def tokenizer(text):
     text = re.sub('<[^>]*>', '', text)
     emoticons = re.findall('(?::|;|=)(?:-)?(?:\)|\(|D|P)', text.lower())
@@ -577,6 +572,8 @@ cross_val_score(LogisticRegression(), X, y, cv=cv5_idx).mean()
     tokenized = [w for w in text.split() if w not in stop]
     return tokenized
 """
+
+# # first setup document streaming via generator function
 
 def stream_docs(path):
     with open(path, 'r', encoding='utf-8') as csv:
@@ -602,7 +599,7 @@ def get_minibatch(doc_stream, size):
         return None, None
     return docs, y
 
-
+# # tokenize using mytokenizer function 
 
 # # Both countVectorizer and TfidVectorizer require complete voocabulary in memory
 # # So, we use data-independent HashingVectorizer and uses 32-bit MurmurHash3
@@ -622,7 +619,7 @@ doc_stream = stream_docs(path='movie_data.csv')
 
 # **Note**
 # 
-# - You can replace `Perceptron(n_iter, ...)` by `Perceptron(max_iter, ...)` in scikit-learn >= 0.19. The `n_iter` parameter is used here deriberately, because some people still use scikit-learn 0.18.
+# - You can replace `SGDClassifier(n_iter, ...)` by `SGDClassifier(max_iter, ...)` in scikit-learn >= 0.19. The `n_iter` parameter is used here deriberately, because some people still use scikit-learn 0.18.
 # 
 
 
@@ -637,7 +634,6 @@ for _ in range(45):
     X_train = vect.transform(X_train)
     clf.partial_fit(X_train, y_train, classes=classes)
     pbar.update()
-
 
 
 # we will use the last 5000 documents as test data
