@@ -8,6 +8,7 @@ import numpy as np
 # import HashingVectorizer from local dir
 from vectorizer import vect
 
+# # announce that templates folder is found in the same dir as where the app is
 app = Flask(__name__)
 
 ######## Preparing the Classifier
